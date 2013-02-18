@@ -7,6 +7,8 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE PackageImports        #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 -- | Utility functions for using Fay from a Yesod application.
 --
 -- This module is intended to be used from your Yesod application, not from
@@ -77,24 +79,24 @@ import           Control.Monad.IO.Class     (liftIO)
 import           Data.Aeson                 (decode, toJSON)
 import           Data.Aeson.Encode          (fromValue)
 import qualified Data.ByteString.Lazy       as L
-import           Data.Data                  (Data)
+import "base"    Data.Data                  (Data)
 import           Data.Default               (def)
 import           Data.Text                  (pack, unpack)
 import           Data.Text.Encoding         (encodeUtf8)
 import           Data.Text.Lazy.Builder     (fromText, toLazyText)
 import           Filesystem                 (createTree, isFile, readTextFile)
 import           Filesystem.Path.CurrentOS  (directory, encodeString)
-import           Language.Fay               (compileFile)
-import           Language.Fay.Convert       (readFromFay, showToFay)
-import           Language.Fay.FFI           (Foreign)
-import           Language.Fay.Types         (CompileConfig,
+import           Fay                        (compileFile)
+import           Fay.Compiler.Config        (addConfigDirectoryIncludePaths)
+import           Fay.Convert                (readFromFay, showToFay)
+import           Fay.Types                  (CompileConfig,
                                              configDirectoryIncludes,
-                                             addConfigDirectoryIncludes,
                                              configTypecheck)
 import           Language.Fay.Yesod         (Returns (Returns))
 import           Language.Haskell.TH.Syntax (Exp (LitE), Lit (StringL),
                                              Pred (ClassP), Q, Type (VarT),
                                              mkName, qAddDependentFile, qRunIO)
+import "base"    Prelude
 import           System.Exit                (ExitCode (ExitSuccess))
 import           System.Process             (rawSystem)
 import           Text.Julius                (Javascript (Javascript), julius)
@@ -117,7 +119,6 @@ import           Yesod.Json                 (jsonToRepJson)
 -- you should place its definition in the @fay-shared@ folder.
 class ( Data (YesodFayCommand master)
       , Read (YesodFayCommand master)
-      , Foreign (YesodFayCommand master)
       , YesodJquery master
       )
   => YesodFay master where
@@ -249,7 +250,7 @@ fayFileProd name = do
     fp = mkfp name
 
 config :: CompileConfig
-config = addConfigDirectoryIncludes ["fay", "fay-shared"] def
+config = addConfigDirectoryIncludePaths ["fay", "fay-shared"] def
 
 -- | Performs no type checking on the Fay code. Each time the widget is
 -- requested, the Fay code will be compiled from scratch to Javascript.
